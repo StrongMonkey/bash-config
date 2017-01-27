@@ -1,0 +1,105 @@
+tch() {
+    while :; do
+        clear
+        date
+        $1
+        sleep 1
+    done
+}
+
+cajpurge() {
+    rancher_agent_state=$(docker inspect rancher-agent-state | jq -r .[0].Id)
+    rancher_agent_state=${rancher_agent_state:0:12}
+
+    remove=$(docker ps -qa | grep -v ${rancher_agent_state})
+
+    [[ -z "${1}" ]] && [[ ! -z "${remove}" ]] && docker rm -fv ${remove}
+    [[ "${1}" == "-a" ]] && docker rm -fv $(docker ps -qa)
+}
+
+deploy_agent() {
+    docker run -e CATTLE_AGENT-IP=$(dm ip docker-190) -d --privileged -v /var/run/docker.sock:/var/run/docker.sock rancher/agent:v0.8.2 $1
+}
+
+cdp() {
+    cd $HOME/projects/$1
+}
+
+init_genv() {
+    mkdir -p $HOME/gprojects/$(basename $1)/src/$(dirname $1)
+    cd $HOME/gprojects/$(basename $1)/src/$(dirname $1)
+    export GOPATH=$HOME/gprojects/$(basename $1)
+    go get $1
+    genv $(basename $(dirname $1))/$(basename $1)
+}
+
+genv() {
+    export GOPATH=~/gprojects/$(basename $1)
+    cd ~/gprojects/$(basename $1)/src/github.com/$1
+}
+
+go15() {
+    export GOROOT=/usr/local/go1.5
+    export GO15VENDOREXPERIMENT=1
+    export GOPATH=$HOME/go
+    export PATH=/usr/local/go1.5/bin:$GOPATH/bin:$PATH
+}
+
+go16() {
+    if [ "$(readlink /usr/local/go)" != "/usr/local/go1.6" ]; then
+        rm /usr/local/go
+        ln -s /usr/local/go1.6 /usr/local/go
+    fi
+}
+
+go17() {
+    if [ "$(readlink /usr/local/go)" != "/usr/local/go1.7" ]; then
+        rm /usr/local/go
+        ln -s /usr/local/go1.7 /usr/local/go
+    fi
+}
+
+vmssh() {
+    ssh -i ~/.ssh/my-ssh-key daishanpeng@192.168.$1
+}
+
+sourcedocker() {
+    export DOCKER_HOST=tcp://192.168.$1:2375
+    docker ps
+    PS1="(docker host ip: 192.168.$1)$PS1"
+}
+
+rmcontainer() {
+    docker rm -fv $(docker ps -a | grep -v CONT | grep -v 'agent-state' | awk '{print $1}')
+}
+
+idea() {
+    . ~/bin/idea.sh
+}
+
+vmwssh() {
+    ssh -l Administrator 192.168.$1
+}
+
+gcessh() {
+    ssh -i ~/.ssh/my-ssh-key ubuntu@$1
+}
+
+rosssh() {
+    ssh rancher@192.168.$1
+}
+
+dieall() {
+    cleandb
+    pkill rancher-catalog-service websocket-proxy rancher-compose-executor webhook-service
+    rmcontainer
+}
+
+purgedocker() {
+    docker rmi $(docker images -f "dangling=true" -q)
+}
+
+gpull() {
+    git fetch origin pull/$1/head:pr-$1
+    git checkout pr-$1
+}

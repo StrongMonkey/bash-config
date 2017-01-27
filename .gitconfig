@@ -1,0 +1,12 @@
+[core]
+editor = vim
+	pager = less -R
+[alias]
+hist = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	cm = checkout master
+[credential]
+[user]
+	name = Daishan Peng
+	email = daishan@rancher.com
+[color]
+	ui = true
